@@ -18,7 +18,10 @@ def get_map():
 	habitat_dao = SA_Habitat_DAO(session=session)
 
 	# Parse parameters into custom and WMS parameters.
-	custom_parameters = json.loads(request.args.get('PARAMS'),'[]')
+	custom_parameters = []
+	custom_parameters_json = request.args.get('PARAMS','[]')
+	if custom_parameters_json:
+		custom_parameters = json.loads(custom_parameters_json)
 	wms_parameters = request.args.items()
 
 	# Assemble filters from custom parameters.
