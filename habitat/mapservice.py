@@ -1,4 +1,4 @@
-from flask import Flask, request, Response
+from flask import Flask, request, Response, json
 
 import sasi.sa.session as sa_session
 from sasi.dao.habitat.sa_habitat_dao import SA_Habitat_DAO
@@ -18,12 +18,19 @@ def get_map():
 	habitat_dao = SA_Habitat_DAO(session=session)
 
 	# Parse parameters into custom and WMS parameters.
-	custom_parameters = request.args.get('PARAMS')
+	custom_parameters = json.loads(request.args.get('PARAMS'),'[]')
 	wms_parameters = request.args.items()
 
 	# Assemble filters from custom parameters.
 	# @TODO
-	filters = {}
+	filters = []
+	for p in custom_parameters:
+		f = {
+				'attr': p[0],
+				'op': p[1],
+				'value': p[2]
+				}
+		filters.append(f)
 
 	# Generate map image for the given parameters.
 	map_image = habitat_ms.get_map_image_from_wms(wms_parameters=wms_parameters, habitat_dao=habitat_dao, filters=filters) 
