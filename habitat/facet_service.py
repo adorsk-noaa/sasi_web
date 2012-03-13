@@ -6,8 +6,10 @@ from sasi.dao.habitat.sa_habitat_dao import SA_Habitat_DAO
 app = Flask(__name__)
 app.debug = True
 
+from xdomain import *
 
 @app.route('/get_facets')
+@crossdomain(origin='*')
 def get_facets():
 
 	# Get a session.
@@ -28,7 +30,7 @@ def get_facets():
 	facets.extend(energy_facets)
 
 	# Features.
-	feature_facets = []
+	feature_facets = get_feature_facets(habitat_dao=habitat_dao)
 	facets.extend(feature_facets)
 
 	# Return facets.
@@ -61,7 +63,7 @@ def get_energy_facets(habitat_dao=None, filters=None):
 	energys = habitat_dao.get_energys_for_habitats(filters=filters)
 
 	# Assemble options for facet.
-	options = [[energy, energy] for energy in energys]
+	options = [[energy[0], energy[0]] for energy in energys]
 	options.sort(key=lambda o:o[0])
 
 	# Assemble facet.
@@ -75,9 +77,24 @@ def get_energy_facets(habitat_dao=None, filters=None):
 	return [facet]
 
 
-# HERE!!!
-# TODO
-def get_feature_facets(habitat_dao=None, filters=None): pass
+def get_feature_facets(habitat_dao=None, filters=None):
+
+	# Get available features for habitats.
+	features = habitat_dao.get_features_for_habitats(filters=filters)
+
+	# Assemble options for facet.
+	options = [[f.name, f.id] for f in features]
+	options.sort(key=lambda o:o[0])
+
+	# Assemble facet.
+	facet = {
+			'label': 'Features',
+			'id': 'Habitat_Type.Feature.id',
+			'type': 'multiselect',
+			'options': options
+			}
+
+	return [facet]
 
 if __name__ == '__main__':
 	app.run()
