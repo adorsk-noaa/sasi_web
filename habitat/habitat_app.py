@@ -1,5 +1,6 @@
 from flask import Flask, request, Response, json, jsonify
 import habitat_services
+import sasi.sa.session as sa_session
 
 app = Flask(__name__)
 app.debug = True
@@ -47,15 +48,10 @@ def get_map():
 	for p in custom_parameters:
 
 		# Handle feature parameters specially, to account for categories.
-		if 'Feature-' in p[0]:
-			p[0] = re.sub('Feature-(Biological|Geological)', 'Feature', p[0])
+		if 'Feature-' in p['field']:
+			p['field'] = re.sub('Feature-(Biological|Geological)', 'Feature', p['field'])
 
-		f = {
-				'attr': p[0],
-				'op': p[1],
-				'value': p[2]
-				}
-		filters.append(f)
+		filters.append(p)
 
 	map_image = habitat_services.get_map(wms_parameters=wms_parameters, filters=filters)
 
@@ -64,5 +60,6 @@ def get_map():
 
 
 if __name__ == '__main__':
+	session = sa_session.get_session()
 	app.run()
 

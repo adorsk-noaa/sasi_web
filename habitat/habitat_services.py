@@ -46,7 +46,6 @@ def get_facet(id_field=None, value_field=None, label_field=None, filters=None, a
 			'choices': choices
 			}
 
-	session.close()	
 	return facet
 
 
@@ -60,8 +59,6 @@ def get_map(wms_parameters=None, filters=None):
 
 	# Generate map image for the given parameters.
 	map_image = habitat_ms.get_map_image_from_wms(wms_parameters=wms_parameters, habitat_dao=habitat_dao, filters=filters) 
-
-	session.close()	
 
 	# Return the image.
 	return map_image
