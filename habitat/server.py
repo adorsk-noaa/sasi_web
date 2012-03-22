@@ -12,15 +12,18 @@ base=/tmp/tilecache
 
 [habitat]
 type=WMS
-url=http://localhost:%s/map/get_map
+url=http://localhost:%s/habitat/app/get_map?TRANSPARENT=TRUE
+bbox=-78.4985,32.1519,-65.7055,44.7674
+maxResolution=0.025
+levels=5
 extension=png
 """ % port
 
 tilecache.config_file_handle = StringIO(tilecache_config)
 
 d = wsgiserver.WSGIPathInfoDispatcher({
-'/map': app,
-'/cache': tilecache.app
+'/habitat/app': app,
+'/habitat/cache': tilecache.app
 })
 
 server = wsgiserver.CherryPyWSGIServer(('0.0.0.0', port),d)

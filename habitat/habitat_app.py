@@ -44,6 +44,7 @@ def get_map():
 	# Assemble filters from custom parameters.
 	# @TODO
 	filters = []
+	print "request url is: %s" % request.url
 	print "parms is: %s" % custom_parameters
 	for p in custom_parameters:
 
