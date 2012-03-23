@@ -1,14 +1,23 @@
 from flask import Flask, request, Response, json, jsonify
+from flaskext.cache import Cache
 import habitat_services
 import sasi.sa.session as sa_session
 
 app = Flask(__name__)
 app.debug = True
 
+app.config['CACHE_TYPE'] = 'filesystem'
+app.config['CACHE_DIR'] = '/tmp/mycache'
+cache = Cache(app)
+
 from xdomain import *
+
+def make_cache_key():
+	return "%s" % (request.url)
 
 @app.route('/get_facet/')
 @crossdomain(origin='*')
+@cache.cached(key_prefix=make_cache_key)
 def get_facet():
 
 	id_field = request.args.get('ID_FIELD', '')
@@ -32,6 +41,7 @@ def get_facet():
 
 @app.route('/get_map')
 @crossdomain(origin='*')
+@cache.cached(key_prefix=make_cache_key)
 def get_map():
 
 	# Parse parameters into custom and WMS parameters.
