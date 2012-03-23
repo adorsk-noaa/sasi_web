@@ -18,7 +18,7 @@ def get_facet(id_field=None, value_field=None, label_field=None, filters=None, a
 	label_label = '%s_label' % pid
 	value_label = '%s_value' % pid
 
-	# Get aggregates.
+	# Get aggregates for choices.
 	aggregates = habitat_dao.get_aggregates(
 			fields=[{'id': value_field, 'label': value_label}],
 			grouping_fields=[
@@ -41,9 +41,19 @@ def get_facet(id_field=None, value_field=None, label_field=None, filters=None, a
 
 	choices.sort(key=lambda o:o['label'])
 
+	# Get total for value field.
+	value_total_aggregates = habitat_dao.get_aggregates(
+			fields=[{'id': value_field, 'label': value_label}],
+			filters=filters, 
+			aggregate_funcs = [aggregate_func],
+			as_dicts=True
+			)
+	value_total = value_total_aggregates[0]['%s--%s' % (value_label, aggregate_func)]
+
 	# Assemble facet.
 	facet = {
-			'choices': choices
+			'choices': choices,
+			'value_total': value_total
 			}
 
 	return facet
