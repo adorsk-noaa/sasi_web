@@ -1,4 +1,4 @@
-from flask import Flask, request, Response, json, jsonify
+from flask import Flask, request, Response, json, jsonify, send_file
 from flaskext.cache import Cache
 import habitat_services
 import sasi.sa.session as sa_session
@@ -15,10 +15,28 @@ from xdomain import *
 def make_cache_key():
 	return "%s" % (request.url)
 
-@app.route('/get_facet/')
+@app.route('/get_export/')
 @crossdomain(origin='*')
 @cache.cached(key_prefix=make_cache_key)
-def get_facet():
+def get_export():
+	export_type = request.args.get('TYPE','csv')
+	filters_json = request.args.get('FILTERS','[]')
+	if filters_json: filters = json.loads(filters_json)
+	else: filters = []
+
+	if export_type == 'csv':
+		resp = Response(
+				habitat_services.get_export(type='csv', filters=filters),
+				mimetype='text/csv'
+				)
+		resp.headers['Content-Disposition'] = 'attachment; filename=habitats.csv'
+		return resp
+
+
+@app.route('/get_choice_facet/')
+@crossdomain(origin='*')
+@cache.cached(key_prefix=make_cache_key)
+def get_choice_facet():
 
 	id_field = request.args.get('ID_FIELD', '')
 	label_field = request.args.get('LABEL_FIELD', '')
@@ -29,7 +47,7 @@ def get_facet():
 	if filters_json: filters = json.loads(filters_json)
 	else: filters = []
 
-	facet = habitat_services.get_facet(
+	facet = habitat_services.get_choice_facet(
 			id_field=id_field,
 			value_field=value_field,
 			label_field=label_field,
@@ -38,6 +56,30 @@ def get_facet():
 			)
 
 	return Response(json.dumps(facet, indent=2), mimetype='application/json')
+
+@app.route('/get_numeric_facet/')
+@crossdomain(origin='*')
+#@cache.cached(key_prefix=make_cache_key)
+def get_numeric_facet():
+
+	value_field = request.args.get('VALUE_FIELD', '')
+
+	base_filters_json = request.args.get('BASE_FILTERS','[]')
+	if base_filters_json: base_filters = json.loads(base_filters_json)
+	else: base_filters = []
+
+	filters_json = request.args.get('FILTERS','[]')
+	if filters_json: filters = json.loads(filters_json)
+	else: filters = []
+
+	facet = habitat_services.get_numeric_facet(
+			value_field=value_field,
+			base_filters=base_filters,
+			filters=filters,
+			)
+
+	return Response(json.dumps(facet, indent=2), mimetype='application/json')
+
 
 @app.route('/get_map')
 @crossdomain(origin='*')

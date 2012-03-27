@@ -27,4 +27,7 @@ def main():
 	#print numeric_facet['unfiltered_histogram']
 	#print numeric_facet['filtered_histogram']
 
+	csv_export = habitat_services.get_export(type='csv', filters=[])
+	print csv_export
+
 if __name__ == '__main__': main()
