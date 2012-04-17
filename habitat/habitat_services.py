@@ -2,27 +2,31 @@ import sasi.sa.session as sa_session
 from sasi.dao.habitat.sa_habitat_dao import SA_Habitat_DAO
 import sasi.viz.habitat.map.mapserver as habitat_ms
 from sasi.exporters.habitat import csv_exporter
+from sasi.exporters.habitat import shp_exporter
 
 import re
 import os
 
-def get_export(type=None, filters=None):
+def get_dao():
 	session = sa_session.get_session()
-	habitat_dao = SA_Habitat_DAO(session=session)
+	return SA_Habitat_DAO(session=session)
+
+def get_export(type=None, filters=None):
+	habitat_dao = get_dao()
+
 	habitats = habitat_dao.get_habitats(filters=filters)
 
 	if type == 'csv':
 		exporter = csv_exporter.CsvExporter()
 		return exporter.export(habitats)
 
+	if type == 'shp':
+		exporter = shp_exporter.ShpExporter()
+		return exporter.export(habitats)
+
 
 def get_choice_facet(id_field=None, value_field=None, label_field=None, filters=None, aggregate_func='sum'):
-
-	# Get a session.
-	session = sa_session.get_session()
-
-	# Create habitat DAO.
-	habitat_dao = SA_Habitat_DAO(session=session)
+	habitat_dao = get_dao()
 
 	# We use the current PID to create unique labels.
 	pid = "%s" % os.getpid()
@@ -72,12 +76,7 @@ def get_choice_facet(id_field=None, value_field=None, label_field=None, filters=
 
 
 def get_numeric_facet(value_field=None, base_filters=[], filters=[]):
-
-	# Get a session.
-	session = sa_session.get_session()
-
-	# Create habitat DAO.
-	habitat_dao = SA_Habitat_DAO(session=session)
+	habitat_dao = get_dao()
 
 	bucket_field = {'id': value_field, 'label': 'bucket_field'}
 
@@ -119,12 +118,7 @@ def get_numeric_facet(value_field=None, base_filters=[], filters=[]):
 
 
 def get_map(wms_parameters=None, filters=None):
-
-	# Get a session.
-	session = sa_session.get_session()
-
-	# Create habitat DAO.
-	habitat_dao = SA_Habitat_DAO(session=session)
+	habitat_dao = get_dao()
 
 	# Generate map image for the given parameters.
 	map_image = habitat_ms.get_map_image_from_wms(wms_parameters=wms_parameters, habitat_dao=habitat_dao, filters=filters) 
@@ -132,4 +126,27 @@ def get_map(wms_parameters=None, filters=None):
 	# Return the image.
 	return map_image
 
+def get_totals(value_field=None, base_filters=[], filters=[]):
+	habitat_dao = get_dao()
+	value_field = {'id': value_field, 'label': 'value_field'}
+
+	unfiltered_aggregates = habitat_dao.get_aggregates(
+			fields=[value_field],
+			aggregate_funcs=['sum'], 
+			filters=base_filters).pop()
+	unfiltered_total = float(unfiltered_aggregates["%s--sum" % value_field['label']])
+
+	filtered_aggregates = habitat_dao.get_aggregates(
+			fields=[value_field],
+			aggregate_funcs=['sum'], 
+			filters=filters).pop()
+	filtered_total= float(filtered_aggregates["%s--sum" % value_field['label']])
+
+	# Assemble totals
+	totals = {
+			'unfiltered_total': unfiltered_total,
+			'filtered_total': filtered_total,
+			}
+
+	return totals
 

@@ -2,12 +2,12 @@ from flask import Flask, request, Response, json, jsonify, send_file
 from flaskext.cache import Cache
 import habitat_services
 import sasi.sa.session as sa_session
+import os
 
 app = Flask(__name__)
-app.debug = True
 
 app.config['CACHE_TYPE'] = 'filesystem'
-app.config['CACHE_DIR'] = '/tmp/mycache'
+app.config['CACHE_DIR'] = '/var/cache/sasi/habitat/app'
 cache = Cache(app)
 
 from xdomain import *
@@ -17,20 +17,16 @@ def make_cache_key():
 
 @app.route('/get_export/')
 @crossdomain(origin='*')
-@cache.cached(key_prefix=make_cache_key)
+#@cache.cached(key_prefix=make_cache_key)
 def get_export():
-	export_type = request.args.get('TYPE','csv')
+	export_type = request.args.get('TYPE','csv').lower()
 	filters_json = request.args.get('FILTERS','[]')
 	if filters_json: filters = json.loads(filters_json)
 	else: filters = []
 
-	if export_type == 'csv':
-		resp = Response(
-				habitat_services.get_export(type='csv', filters=filters),
-				mimetype='text/csv'
-				)
-		resp.headers['Content-Disposition'] = 'attachment; filename=habitats.csv'
-		return resp
+	export_file = habitat_services.get_export(type=export_type, filters=filters)
+	(filename, extension) = os.path.splitext(export_file)
+	return send_file(export_file, as_attachment=True, attachment_filename="habitat_data{}".format(extension))
 
 
 @app.route('/get_choice_facet/')
@@ -59,7 +55,7 @@ def get_choice_facet():
 
 @app.route('/get_numeric_facet/')
 @crossdomain(origin='*')
-#@cache.cached(key_prefix=make_cache_key)
+@cache.cached(key_prefix=make_cache_key)
 def get_numeric_facet():
 
 	value_field = request.args.get('VALUE_FIELD', '')
@@ -80,6 +76,29 @@ def get_numeric_facet():
 
 	return Response(json.dumps(facet, indent=2), mimetype='application/json')
 
+@app.route('/get_totals/')
+@crossdomain(origin='*')
+#@cache.cached(key_prefix=make_cache_key)
+def get_totals():
+
+	value_field = request.args.get('VALUE_FIELD', '')
+
+	base_filters_json = request.args.get('BASE_FILTERS','[]')
+	if base_filters_json: base_filters = json.loads(base_filters_json)
+	else: base_filters = []
+
+	filters_json = request.args.get('FILTERS','[]')
+	if filters_json: filters = json.loads(filters_json)
+	else: filters = []
+
+	totals = habitat_services.get_totals(
+			value_field=value_field,
+			base_filters=base_filters,
+			filters=filters,
+			)
+
+	return Response(json.dumps(totals, indent=2), mimetype='application/json')
+
 
 @app.route('/get_map')
 @crossdomain(origin='*')
@@ -96,8 +115,6 @@ def get_map():
 	# Assemble filters from custom parameters.
 	# @TODO
 	filters = []
-	print "request url is: %s" % request.url
-	print "parms is: %s" % custom_parameters
 	for p in custom_parameters:
 
 		# Handle feature parameters specially, to account for categories.
@@ -114,5 +131,5 @@ def get_map():
 
 if __name__ == '__main__':
 	session = sa_session.get_session()
-	app.run()
+	app.run(debug=True)
 
