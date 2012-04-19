@@ -12,6 +12,13 @@ cache = Cache(app)
 
 from xdomain import *
 
+
+# Define teardown for closing db connections.
+@app.teardown_request
+def teardown_request(exception):
+	sa_session.close_session()
+	
+
 def make_cache_key():
 	return "%s" % (request.url)
 
