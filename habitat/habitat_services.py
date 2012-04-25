@@ -50,12 +50,13 @@ def get_choice_facet(id_field=None, value_field=None, label_field=None, filters=
 
 	# Assemble facet choices from aggregates.
 	choices = []
-	for a in aggregates['children'].get('children', {}).values():
-		choices.append({
-			"id": a['data'][id_label],
-			"label": a['data'][label_label],
-			"count": a['data']["%s--%s" % (value_label, aggregate_func)]
-			})
+	for branch in aggregates.get('children', {}).values():
+		for leaf in branch.get('children', {}).values():
+			choices.append({
+				"id": leaf['data'][id_label],
+				"label": leaf['data'][label_label],
+				"count": leaf['data']["%s--%s" % (value_label, aggregate_func)]
+				})
 
 	choices.sort(key=lambda o:o['label'])
 
@@ -125,7 +126,7 @@ def get_map(wms_parameters=None, filters=None):
 
 def get_totals(value_field=None, base_filters=[], filters=[]):
 	habitat_dao = get_dao()
-	value_field = {'id': value_field, 'label': 'value_field', aggregate_funcs: ['sum']}
+	value_field = {'id': value_field, 'label': 'value_field', 'aggregate_funcs': ['sum']}
 
 	unfiltered_aggregates = habitat_dao.get_aggregates(
 			fields=[value_field],

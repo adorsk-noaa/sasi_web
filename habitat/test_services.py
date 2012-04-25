@@ -26,8 +26,11 @@ def main():
 				]
 			)
 
-	print numeric_facet['base_histogram']
-	print numeric_facet['filtered_histogram']
+	#print numeric_facet['base_histogram']
+	#print numeric_facet['filtered_histogram']
+
+	totals = habitat_services.get_totals(value_field='area', filters=[])
+	print totals
 
 	#csv_export = habitat_services.get_export(type='csv', filters=[])
 	#print csv_export
