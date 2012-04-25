@@ -17,17 +17,19 @@ def main():
 			filters=filters, 
 			aggregate_func=aggregate_func
 			)
-	#print choice_facet
+	print choice_facet
 
 	numeric_facet = habitat_services.get_numeric_facet(
-			value_field=value_field, 
-			filters=filters, 
+			value_field='z',
+			filters=[
+				{'field': 'habitat_type.substrate.id', 'op': 'in', 'value': ['S1']}
+				]
 			)
 
-	#print numeric_facet['unfiltered_histogram']
-	#print numeric_facet['filtered_histogram']
+	print numeric_facet['base_histogram']
+	print numeric_facet['filtered_histogram']
 
-	csv_export = habitat_services.get_export(type='csv', filters=[])
-	print csv_export
+	#csv_export = habitat_services.get_export(type='csv', filters=[])
+	#print csv_export
 
 if __name__ == '__main__': main()

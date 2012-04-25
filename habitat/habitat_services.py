@@ -36,40 +36,36 @@ def get_choice_facet(id_field=None, value_field=None, label_field=None, filters=
 
 	# Get aggregates for choices.
 	aggregates = habitat_dao.get_aggregates(
-			fields=[{'id': value_field, 'label': value_label}],
+			fields=[{
+				'id': value_field, 
+				'label': value_label,
+				'aggregate_funcs': [aggregate_func],
+				}],
 			grouping_fields=[
 				{'id': id_field, 'label': id_label},
 				{'id': label_field, 'label': label_label}
 				],
-			filters=filters, 
-			aggregate_funcs = [aggregate_func],
-			as_dicts=True
+			filters=filters 
 			)
 
 	# Assemble facet choices from aggregates.
 	choices = []
-	for a in aggregates:
+	for a in aggregates['children'].get('children', {}).values():
 		choices.append({
-			"id": a[id_label],
-			"label": a[label_label],
-			"count": a["%s--%s" % (value_label, aggregate_func)]
+			"id": a['data'][id_label],
+			"label": a['data'][label_label],
+			"count": a['data']["%s--%s" % (value_label, aggregate_func)]
 			})
 
 	choices.sort(key=lambda o:o['label'])
 
 	# Get total for value field.
-	value_total_aggregates = habitat_dao.get_aggregates(
-			fields=[{'id': value_field, 'label': value_label}],
-			filters=filters, 
-			aggregate_funcs = [aggregate_func],
-			as_dicts=True
-			)
-	value_total = value_total_aggregates[0]['%s--%s' % (value_label, aggregate_func)]
+	total = aggregates['data']['%s--%s' % (value_label, aggregate_func)]
 
 	# Assemble facet.
 	facet = {
 			'choices': choices,
-			'value_total': value_total
+			'value_total': total
 			}
 
 	return facet
@@ -83,12 +79,13 @@ def get_numeric_facet(value_field=None, base_filters=[], filters=[]):
 	# Get base field min and max.
 	# We use the same min and max for base and filtered
 	# to provide a common reference scale.
+	aggregate_field = bucket_field.copy()
+	aggregate_field['aggregate_funcs'] = ['min', 'max']
 	aggregates = habitat_dao.get_aggregates(
-			fields=[bucket_field],
-			aggregate_funcs=['min','max'], 
-			filters=base_filters).pop()
-	field_max = float(aggregates["%s--max" % bucket_field['label']])
-	field_min = float(aggregates["%s--min" % bucket_field['label']])
+			fields=[aggregate_field],
+			filters=base_filters)
+	field_max = float(aggregates['data']["%s--max" % bucket_field['label']])
+	field_min = float(aggregates['data']["%s--min" % bucket_field['label']])
 
 	# Get unfiltered histogram.
 	base_histogram = habitat_dao.get_histogram(
@@ -128,19 +125,17 @@ def get_map(wms_parameters=None, filters=None):
 
 def get_totals(value_field=None, base_filters=[], filters=[]):
 	habitat_dao = get_dao()
-	value_field = {'id': value_field, 'label': 'value_field'}
+	value_field = {'id': value_field, 'label': 'value_field', aggregate_funcs: ['sum']}
 
 	unfiltered_aggregates = habitat_dao.get_aggregates(
 			fields=[value_field],
-			aggregate_funcs=['sum'], 
-			filters=base_filters).pop()
-	unfiltered_total = float(unfiltered_aggregates["%s--sum" % value_field['label']])
+			filters=base_filters)
+	unfiltered_total = float(unfiltered_aggregates['data']["%s--sum" % value_field['label']])
 
 	filtered_aggregates = habitat_dao.get_aggregates(
 			fields=[value_field],
-			aggregate_funcs=['sum'], 
-			filters=filters).pop()
-	filtered_total= float(filtered_aggregates["%s--sum" % value_field['label']])
+			filters=filters)
+	filtered_total= float(filtered_aggregates['data']["%s--sum" % value_field['label']])
 
 	# Assemble totals
 	totals = {
