@@ -32,6 +32,24 @@ def main():
 	totals = habitat_services.get_totals(value_field='area', filters=[])
 	print totals
 
+	# Test aggregates.
+	value_fields = [
+			{
+				'id': 'area',
+				'aggregate_funcs': ['sum']
+				}
+			]
+
+	grouping_fields = [
+			]
+	filters = []
+	aggregates = habitat_services.get_aggregates(
+			value_fields = value_fields,
+			grouping_fields = grouping_fields,
+			filters = filters
+			)
+	print aggregates
+
 	#csv_export = habitat_services.get_export(type='csv', filters=[])
 	#print csv_export
 

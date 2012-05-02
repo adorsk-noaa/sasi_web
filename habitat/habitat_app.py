@@ -106,6 +106,34 @@ def get_totals():
 
 	return Response(json.dumps(totals, indent=2), mimetype='application/json')
 
+@app.route('/get_aggregates/')
+@crossdomain(origin='*')
+#@cache.cached(key_prefix=make_cache_key)
+def get_aggregates():
+
+	value_fields_json = request.args.get('VALUE_FIELDS', '')
+	if value_fields_json: value_fields = json.loads(value_fields_json)
+	else: value_fields= []
+
+	grouping_fields_json = request.args.get('GROUPING_FIELDS', '')
+	if grouping_fields_json: grouping_fields = json.loads(grouping_fields_json)
+	else: grouping_fields = []
+
+	filters_json = request.args.get('FILTERS','[]')
+	if filters_json: filters = json.loads(filters_json)
+	else: filters = []
+
+	print "vf: ", value_fields
+	print "gf: ", grouping_fields
+	print "f: ", filters
+
+	aggregates = habitat_services.get_aggregates(
+			value_fields=value_fields,
+			grouping_fields=grouping_fields,
+			filters=filters,
+			)
+
+	return Response(json.dumps(aggregates, indent=2), mimetype='application/json')
 
 @app.route('/get_map')
 @crossdomain(origin='*')

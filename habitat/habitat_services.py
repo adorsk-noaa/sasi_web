@@ -146,3 +146,13 @@ def get_totals(value_field=None, base_filters=[], filters=[]):
 
 	return totals
 
+
+def get_aggregates(value_fields=None, grouping_fields=[], filters=[]):
+	habitat_dao = get_dao()
+
+	aggregates = habitat_dao.get_aggregates(
+			fields=value_fields,
+			grouping_fields=grouping_fields,
+			filters=filters)
+
+	return aggregates
