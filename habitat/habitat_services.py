@@ -6,6 +6,7 @@ from sasi.exporters.habitat import shp_exporter
 
 import re
 import os
+import copy
 
 def get_dao():
 	session = sa_session.get_session()
@@ -147,12 +148,52 @@ def get_totals(value_field=None, base_filters=[], filters=[]):
 	return totals
 
 
-def get_aggregates(value_fields=None, grouping_fields=[], filters=[]):
+def get_aggregates(value_fields=None, grouping_fields=[], filters=[], with_unfiltered=False, base_filters=[]):
 	habitat_dao = get_dao()
+
+	for vf in value_fields: 
+		vf.setdefault('label', "{}--label".format(vf.get('id')))
 
 	aggregates = habitat_dao.get_aggregates(
 			fields=value_fields,
 			grouping_fields=grouping_fields,
 			filters=filters)
 
+	if with_unfiltered:
+		unfiltered_value_fields = copy.deepcopy(value_fields)
+		for vf in unfiltered_value_fields:
+			vf['label'] += '--unfiltered'
+
+		unfiltered_aggregates = habitat_dao.get_aggregates(
+				fields=unfiltered_value_fields,
+				grouping_fields=grouping_fields,
+				filters=base_filters
+				)
+
+		# Make path dicts for each tree.
+		filtered_path_dict = get_path_dict(aggregates, tuple(), {})
+		unfiltered_path_dict = get_path_dict(unfiltered_aggregates, tuple(), {})
+
+		# Add unfiltered data to filtered data.
+		for path, filtered_node in filtered_path_dict.items():
+			unfiltered_node = unfiltered_path_dict.get(path)
+			for d in unfiltered_node['data']:
+				filtered_node['data'].append(d)
+
 	return aggregates
+
+# Helper function to make a dictionary of path:leaf pairs for a given tree node.
+def get_path_dict(node, path, path_dict):
+	cur_path = path + (node.get('id'),)
+
+	path_dict[cur_path] = node
+
+	if node.has_key('children'):
+		for c in node['children'].values():
+			get_path_dict(c, cur_path, path_dict)
+	
+	return path_dict
+
+
+
+	

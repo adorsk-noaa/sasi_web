@@ -41,6 +41,7 @@ def main():
 			]
 
 	grouping_fields = [
+			{'id': "habitat_type.substrate.id", 'label': 'substrate_id', 'label_field': {'id': 'habitat_type.substrate.name'}, 'all_values': True},
 			]
 	filters = []
 	aggregates = habitat_services.get_aggregates(
@@ -48,7 +49,19 @@ def main():
 			grouping_fields = grouping_fields,
 			filters = filters
 			)
-	print aggregates
+	#print aggregates
+
+	# Test aggregates w/ unfiltered.
+	uf_aggregates = habitat_services.get_aggregates(
+			value_fields = value_fields,
+			grouping_fields = grouping_fields,
+			filters = [ 
+				{'field': 'habitat_type.substrate.id', 'op': 'in', 'value': ['S1']}
+				],
+			with_unfiltered = True
+			)
+
+	print uf_aggregates
 
 	#csv_export = habitat_services.get_export(type='csv', filters=[])
 	#print csv_export
