@@ -123,14 +123,20 @@ def get_aggregates():
 	if filters_json: filters = json.loads(filters_json)
 	else: filters = []
 
-	print "vf: ", value_fields
-	print "gf: ", grouping_fields
-	print "f: ", filters
+	with_unfiltered = request.args.get('WITH_UNFILTERED','FALSE')
+	if with_unfiltered == 'TRUE': with_unfiltered = True
+	else: with_unfiltered = False
+
+	base_filters_json = request.args.get('BASE_FILTERS','[]')
+	if base_filters_json: base_filters = json.loads(base_filters_json)
+	else: base_filters = []
 
 	aggregates = habitat_services.get_aggregates(
 			value_fields=value_fields,
 			grouping_fields=grouping_fields,
 			filters=filters,
+			with_unfiltered=with_unfiltered,
+			base_filters=base_filters
 			)
 
 	return Response(json.dumps(aggregates, indent=2), mimetype='application/json')
