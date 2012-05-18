@@ -73,40 +73,52 @@ def get_choice_facet(id_field=None, value_field=None, label_field=None, filters=
 	return facet
 
 
-def get_numeric_facet(value_field=None, base_filters=[], filters=[]):
-	habitat_dao = get_dao()
+def get_numeric_facet(value_field=None, grouping_field=None, base_filters=[], filters=[]):
 
-	bucket_field = {'id': value_field, 'label': 'bucket_field'}
+	# Set properties on grouping field.
+	grouping_field['as_histogram'] = True
+	grouping_field['all_values'] = True
+	grouping_field.setdefault('num_buckets', 25)
 
-	# Get base field min and max.
-	# We use the same min and max for base and filtered
-	# to provide a common reference scale.
-	aggregate_field = bucket_field.copy()
-	aggregate_field['aggregate_funcs'] = ['min', 'max']
-	aggregates = habitat_dao.get_aggregates(
-			fields=[aggregate_field],
-			filters=base_filters)
-	field_min = float(aggregates['data'][0]['value'])
-	field_max = float(aggregates['data'][1]['value'])
-
-	# Get unfiltered histogram.
-	base_histogram = habitat_dao.get_histogram(
-			bucket_field=bucket_field,
-			field_max=field_max,
-			field_min=field_min,
-			num_buckets=25,
-			filters=base_filters,
+	# Get filtered and unfiltered aggregates.
+	aggregates = get_aggregates(
+			value_fields = [value_field],
+			grouping_fields = [grouping_field],
+			filters=filters,
+			with_unfiltered=True,
+			base_filters=base_filters
 			)
 
-	# Get filtered histogram.
-	filtered_histogram = habitat_dao.get_histogram(
-			bucket_field=bucket_field,
-			field_max=field_max,
-			field_min=field_min,
-			num_buckets=25,
-			filters=filters
-			)
+	# Assemble histograms
+	base_histogram = []
+	filtered_histogram = []
 
+	for node in aggregates.get('children', {}).values():
+
+		# Get min/max from label.
+		bucket_label = node['label']
+		bucket_min = ""
+		bucket_max = ""
+		m = re.match('(.*) to (.*)', bucket_label)
+		if m:
+			bucket_min = float(m.group(1))
+			bucket_max = float(m.group(2))
+
+		base_bucket = {
+				'bucket': node['label'],
+				'min': bucket_min,
+				'max': bucket_max,
+				'count': node['data'][0]['value']
+				}
+		base_histogram.append(base_bucket)
+
+		filtered_bucket = base_bucket.copy()
+		filtered_bucket['count'] = node['data'][1]['value']
+		filtered_histogram.append(filtered_bucket)
+
+	for h in [base_histogram, filtered_histogram]:
+		h.sort(key=lambda b: b['min'])
+        
 	# Assemble facet
 	facet = {
 			'base_histogram': base_histogram,
@@ -171,28 +183,29 @@ def get_aggregates(value_fields=None, grouping_fields=[], filters=[], with_unfil
 				)
 
 		# Make path dicts for each tree.
-		filtered_path_dict = get_path_dict(aggregates, tuple(), {})
-		unfiltered_path_dict = get_path_dict(unfiltered_aggregates, tuple(), {})
+		filtered_path_dict = {}
+		unfiltered_path_dict = {}
+		update_path_dict(aggregates, tuple(), filtered_path_dict)
+		update_path_dict(unfiltered_aggregates, tuple(), unfiltered_path_dict)
 
 		# Add unfiltered data to filtered data.
 		for path, filtered_node in filtered_path_dict.items():
 			unfiltered_node = unfiltered_path_dict.get(path)
 			for d in unfiltered_node['data']:
 				filtered_node['data'].append(d)
+	
 
 	return aggregates
 
 # Helper function to make a dictionary of path:leaf pairs for a given tree node.
-def get_path_dict(node, path, path_dict):
+def update_path_dict(node, path, path_dict):
 	cur_path = path + (node.get('id'),)
 
 	path_dict[cur_path] = node
 
 	if node.has_key('children'):
 		for c in node['children'].values():
-			get_path_dict(c, cur_path, path_dict)
-	
-	return path_dict
+			update_path_dict(c, cur_path, path_dict)
 
 
 

@@ -65,7 +65,11 @@ def get_choice_facet():
 @cache.cached(key_prefix=make_cache_key)
 def get_numeric_facet():
 
-	value_field = request.args.get('VALUE_FIELD', '')
+	value_field_json = request.args.get('VALUE_FIELD', '')
+	value_field = json.loads(value_field_json)
+
+	grouping_field_json = request.args.get('GROUPING_FIELD', '')
+	grouping_field = json.loads(grouping_field_json)
 
 	base_filters_json = request.args.get('BASE_FILTERS','[]')
 	if base_filters_json: base_filters = json.loads(base_filters_json)
@@ -77,6 +81,7 @@ def get_numeric_facet():
 
 	facet = habitat_services.get_numeric_facet(
 			value_field=value_field,
+			grouping_field=grouping_field,
 			base_filters=base_filters,
 			filters=filters,
 			)

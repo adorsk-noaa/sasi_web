@@ -17,20 +17,21 @@ def main():
 			filters=filters, 
 			aggregate_func=aggregate_func
 			)
-	print choice_facet
+	#print choice_facet
 
 	numeric_facet = habitat_services.get_numeric_facet(
-			value_field='z',
+			grouping_field={ 'id':'z', 'transform': '-1 * {field}' },
+			value_field={'id': 'area'},
 			filters=[
 				{'field': 'habitat_type.substrate.id', 'op': 'in', 'value': ['S1']}
 				]
 			)
 
-	print numeric_facet['base_histogram']
-	print numeric_facet['filtered_histogram']
+	import json
+	print json.dumps(numeric_facet)
 
 	totals = habitat_services.get_totals(value_field='area', filters=[])
-	print totals
+	#print totals
 
 	# Test aggregates.
 	value_fields = [
@@ -41,7 +42,8 @@ def main():
 			]
 
 	grouping_fields = [
-			{'id': "habitat_type.substrate.id", 'label': 'substrate_id', 'label_field': {'id': 'habitat_type.substrate.name'}, 'all_values': True},
+			#{'id': "habitat_type.substrate.id", 'label': 'substrate_id', 'label_field': {'id': 'habitat_type.substrate.name'}, 'all_values': True},
+			{ 'id':'z', 'transform': '-1 * {field}', 'as_histogram': True, 'all_values': True},
 			]
 	filters = []
 	aggregates = habitat_services.get_aggregates(
@@ -61,7 +63,7 @@ def main():
 			with_unfiltered = True
 			)
 
-	print uf_aggregates
+	#print uf_aggregates
 
 	#csv_export = habitat_services.get_export(type='csv', filters=[])
 	#print csv_export
