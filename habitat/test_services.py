@@ -27,9 +27,6 @@ def main():
 				]
 			)
 
-	import json
-	print json.dumps(numeric_facet)
-
 	totals = habitat_services.get_totals(value_field='area', filters=[])
 	#print totals
 

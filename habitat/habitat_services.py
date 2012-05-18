@@ -141,20 +141,18 @@ def get_totals(value_field=None, base_filters=[], filters=[]):
 	habitat_dao = get_dao()
 	value_field = {'id': value_field, 'label': 'value_field', 'aggregate_funcs': ['sum']}
 
-	unfiltered_aggregates = habitat_dao.get_aggregates(
-			fields=[value_field],
-			filters=base_filters)
-	unfiltered_total = float(unfiltered_aggregates['data'][0]['value'])
-
-	filtered_aggregates = habitat_dao.get_aggregates(
-			fields=[value_field],
-			filters=filters)
-	filtered_total= float(filtered_aggregates['data'][0]['value'])
+	# Get filtered and unfiltered aggregates.
+	aggregates = get_aggregates(
+			value_fields = [value_field],
+			filters=filters,
+			with_unfiltered=True,
+			base_filters=base_filters
+			)
 
 	# Assemble totals
 	totals = {
-			'unfiltered_total': unfiltered_total,
-			'filtered_total': filtered_total,
+			'filtered_total': aggregates['data'][0]['value'],
+			'unfiltered_total': aggregates['data'][1]['value'],
 			}
 
 	return totals
