@@ -148,16 +148,9 @@ def get_map():
 	result_field_json = request.args.get('RESULT_FIELD','{}')
 	result_field = json.loads(result_field_json)
 
-	# Assemble filters from custom parameters.
-	# @TODO
-	filters = []
-	for p in custom_parameters:
-
-		# Handle feature parameters specially, to account for categories.
-		if 'Feature-' in p['field']:
-			p['field'] = re.sub('Feature-(Biological|Geological)', 'Feature', p['field'])
-
-		filters.append(p)
+	filters_json = request.args.get('FILTERS','[]')
+	if filters_json: filters = json.loads(filters_json)
+	else: filters = []
 
 	map_image = results_services.get_map(wms_parameters=wms_parameters, filters=filters, result_field=result_field)
 
